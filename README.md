@@ -27,4 +27,5 @@ You can also change the color scheme at line 100.
 ## Credits
 
 Card style: https://giffyglyph.com/monstermaker/app/ 
+
 LaTeX help: Skillmon & egreg 

@@ -9,6 +9,7 @@ The sheet currently automatically computes:
   4. Proficiency bonus
   5. Initiative bonus
   6. Passive perception
+  7. Advantage on stat & skill rolls
 
 It also automatically show/hide sections (Traits, Bonus Actions, Reactions, ...) 
 

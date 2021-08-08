@@ -215,8 +215,6 @@
 
 % ---- Add additional mods (feat specific bonus, ...)
 %      things like this work too:  \const{Perception}{Perception+2*\ProfBonus+5}
-\const\Acrobatics{\Acrobatics+\ProfBonus}
-\const\SleightOfHand{\SleightOfHand+\ProfBonus}
 \const\PassivePerception{\Perception+10}
 
 
@@ -242,7 +240,7 @@ You don't need advantage on the attack roll if another enemy of the target is wi
 % SPELL DC EXAMPLE:
 % \newline \textbf{Spell DC}: \fpeval{8+\ProfBonus+\INTmod}.  
 
-\NameAndDesc{Shapeshift}{ \emph{\Numberstringnum{\ProfBonus} use per short or long rest.} You magically assume the shape of one of your chosen transformations. You can stay shapeshifted for \CHAmod h. \newline Known shapes: Pirate Bosun, Hobgoblin, Warhorse}
+\NameAndDesc{Example Action}{ \emph{\Numberstringnum{\ProfBonus} use per short or long rest.} You gain a  bonus of $\snum{\INTmod}$\ on your melee attack rolls}
 }
 
 % ---- Bonus Actions

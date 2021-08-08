@@ -13,6 +13,7 @@ The sheet currently automatically computes:
 
 It also automatically show/hide sections (Traits, Bonus Actions, Reactions, ...) 
 
+If you do not have a LaTeX environment, you can copy the overleaf project at : https://www.overleaf.com/read/pzwxvfkthbfv
 ## Configuration
 
 To modify the sheet, look for the section "YOUR CHARACTER STATS HERE" from line 145 to "DO NOT CHANGE ANYTHING BELOW HERE" at line 259. 

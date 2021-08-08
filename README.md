@@ -23,3 +23,8 @@ You can also change the color scheme at line 100.
 
 ![Black](Sample/Black.png)
 ![Brown](Sample/Brown.png)
+
+## Credits
+
+Card style: https://giffyglyph.com/monstermaker/app/ 
+LaTeX help: Skillmon & egreg 

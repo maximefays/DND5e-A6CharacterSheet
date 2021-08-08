@@ -1,0 +1,519 @@
+\documentclass{article}
+\usepackage{lipsum}
+\usepackage[most]{tcolorbox}
+\usepackage[a6paper,top=0cm,bottom=0.3mm,left=2mm,right=2mm,landscape,includehead,headsep=12mm]{geometry}
+\usepackage{multicol}
+\usepackage{pdfpages}
+\usepackage{fancyhdr}
+\usepackage{fltpoint}
+\usepackage{xintexpr}
+\usepackage{siunitx}
+\usepackage{pgffor}
+\usepackage{xparse}
+\usepackage{xstring}
+\usepackage{xfp}
+\usepackage[outline]{contour}
+\usepackage{fmtcount}
+
+\usetikzlibrary{patterns}
+\usepackage[activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10]{microtype}
+\usepackage{etoolbox}
+
+% ---- helper function: define normal sized plus and minus
+\def\Plus{\texttt{+}}
+\def\Minus{\texttt{-}}
+
+% ---- Helper function: pretty print positive and negative numbers
+\ExplSyntaxOn
+\NewExpandableDocumentCommand{\snum}{O{}m}
+ {
+  \mathbin
+   {
+    \fp_compare:nTF { #2 >= 0 }
+     { \Plus }
+     { \Minus }
+   }
+  \num[#1]{ \fp_eval:n { abs(#2) } }
+ }
+\ExplSyntaxOff
+
+% ---- Helper function: check if substring in string.
+\newcommand\IfStringInList[2]{\IfSubStr{#2}{#1}}
+
+% ---- Helper function: easily add values to variables
+%.     with help from stackoverflow : https://tex.stackexchange.com/questions/609270/confused-with-updating-a-newcommand-constant-inside-a-foreach-loop
+%.     Thanks Skillmon and egreg !
+\newcommand\const[3][0]{%
+  \xdef#2{\fpeval{round(#3,#1)}}%
+}
+
+
+% ---- Helper function; DC check box
+\newtcbox{\DCcheck}[1]{parbox=true,
+					   enhanced,
+					   nobeforeafter,
+					   box align=base,
+					   boxrule=0.4pt,
+					   bottom=-0.5mm,
+					   height=1.7mm,
+  					   right=0mm,
+  					   left=4mm,
+  					   arc=1pt,
+  					   boxsep=2pt,
+  					   baseline=0.2mm,
+  					   colframe=Default,
+  					   coltext=Default,
+  					   colback=Default!10!white,
+  					   valign=bottom,
+  				       overlay={\begin{tcbclipinterior}\fill[Default!75] (frame.south west)
+    			       rectangle node[text=white,font=\sffamily\bfseries\tiny] {#1}
+					   ([xshift=4mm]frame.north west);\end{tcbclipinterior}}}
+
+
+\pagestyle{fancy}
+
+\setlength\lineskip{4pt}%
+\setlength{\parindent}{0pt}%
+\setlength{\parskip}{-0.1pt}%
+\renewcommand{\headrulewidth}{0pt}
+\sisetup{retain-explicit-plus}
+\renewcommand{\familydefault}{\sfdefault}
+
+\newtcolorbox{info}[1][]{
+    bicolor,
+    colback=blue!40,
+    colbacklower=blue!10,
+    boxrule=0pt,
+    sidebyside,
+    colframe=black!100,
+    boxrule=0.1mm,
+    nobeforeafter,
+    sharp corners,
+    }
+
+% ---- Colours
+%\definecolor{Default}{RGB}{33,33,33} % Common
+%\definecolor{Default}{RGB}{70,100,110} % Uncommon
+%\definecolor{Default}{RGB}{118,98,55} % Rare
+%\definecolor{Default}{RGB}{180,50,25} % Mythic
+%\definecolor{Default}{RGB}{100,40,120} % Shifted
+\definecolor{Default}{RGB}{88, 24, 13} % DnD Default
+\definecolor{DarkGold}{HTML}{B8860B}
+
+\tcbset{Subtitle/.style={height=5mm, 
+	               left=0.2mm, 
+	               top=0.1mm,
+				   right=0mm, 
+				   rounded corners,
+				   colback=Default!20,
+				   colframe=Default!20,
+				   fontupper=\color{Default}, 
+				   nobeforeafter
+}}
+
+\tcbset{Text/.style={raster columns=1,
+                   raster before skip=0mm,
+				   blanker,
+				   breakable,
+				   left=3mm, 
+				   nobeforeafter,
+				   raster row skip=1mm,
+				   borderline west={1mm}{0pt}{Default!30}, 
+				   right=0.1mm,
+				   fontupper=\tiny
+}}
+
+
+% ---- Helper function: pretty print action lists. 
+\newcommand{\NameAndDesc}[2]{\tcbitem \textbf{#1}. #2.}
+
+% ---- Helper function: pretty print stats 
+\contourlength{0.3pt}
+\newcommand{\MyStatList}[1]{\IfStringInList{#1}{\Advantage}{\tcbitem\textbf{\contour{DarkGold}{\color{DarkGold}{#1}}} \\[-0.2mm] \color{black} \scriptsize{\csname #1\endcsname} \\[0.1mm] ($\tiny{\snum{\csname #1mod\endcsname}}$)}
+{\tcbitem \textbf{#1} \\[-0.2mm] \color{black} \scriptsize{\csname #1\endcsname} \\[0.1mm] ($\tiny{\snum{\csname #1mod\endcsname}}$)}}
+
+% ---- Helper function: pretty print Saving Throws 
+\newcommand{\MySTList}[1]{\IfStringInList{#1}{\SavingThrows}{\tcbitem $\snum{\the\numexpr \csname #1mod\endcsname + \ProfBonus \relax }$}{\tcbitem $\snum{\csname #1mod\endcsname}$}}
+
+% ---- Helper function: pretty print Saving Throws 
+\contourlength{0.3pt}
+
+\newcommand{\MySkillList}[1]{\IfStringInList{#1}{\Advantage}{\tcbitem \IfStringInList{#1}{AnimalHandling}{\contour{DarkGold}{\color{DarkGold}{Animal H.}}}{\IfStringInList{#1}{SleightOfHand}{\contour{DarkGold}{\color{DarkGold}{Sleight Of H.}}}{\contour{DarkGold}{\color{DarkGold}{#1}}} }  \tcblower $\snum{\csname #1\endcsname}$}{\tcbitem \IfStringInList{#1}{AnimalHandling}{\textbf{Animal H.}}{\IfStringInList{#1}{SleightOfHand}{\textbf{Sleight Of H.}}{\textbf{#1}} } \tcblower $\snum{\csname #1\endcsname}$}}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%% YOUR CHARACTER STATS HERE %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ---- Character Level
+\newcommand\LVL{3}                % Used to compute Proficiency Bonus
+\newcommand\CharName{Uland Rhohral}
+\newcommand\Description{Medium Humanoid Outlander, Chaotic Good}
+\newcommand\Class{Scout Rogue}
+\newcommand\HitDice{3D8}
+\newcommand\SavingThrows{DEX,INT}
+\newcommand\ArmorClass{14}
+\newcommand\HitPoint{18}
+% If you have advantage on any rolls, write that here and uncomment the next line
+% you can mix skills and stats like in the example below: 
+%\newcommand\Advantage{Intimidation,CON,SleightOfHand}
+\newcommand\Advantage{}
+\newcommand\SkillProficiency{Acrobatics,Athletics,Deception,Investigation,Nature,Perception,Stealth, Survival}
+\newcommand\Expertise{Acrobatics,Perception,Nature, Survival}
+\newcommand\WeaponProf{Simple, whips, shortswords}
+\newcommand\ArmorProf{Light, medium, shields}
+\newcommand\Speed{30 ft.}
+
+% ---- Stat block
+\const\STR{12}
+\const\DEX{16}
+\const\CON{10}
+\const\INT{14}
+\const\WIS{14}
+\const\CHA{8}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ---- DO NOT CHANGE 
+\newcommand\ProfBonus{\xintiiAdd{1}{\xintiiMul{\xintiiDivFloor{\LVL}{-4}}{-1}}}
+\const\STRmod{\xintiiQuo{\xintiiAdd{\STR}{-10}}{2}}
+\const\DEXmod{\xintiiQuo{\xintiiAdd{\DEX}{-10}}{2}}
+\const\CONmod{\xintiiQuo{\xintiiAdd{\CON}{-10}}{2}}
+\const\INTmod{\xintiiQuo{\xintiiAdd{\INT}{-10}}{2}}
+\const\WISmod{\xintiiQuo{\xintiiAdd{\WIS}{-10}}{2}}
+\const\CHAmod{\xintiiQuo{\xintiiAdd{\CHA}{-10}}{2}}
+
+% ---- DO NOT CHANGE 
+\const\Acrobatics{\DEXmod}
+\const\AnimalHandling{\WISmod}
+\const\Arcana{\INTmod}
+\const\Athletics{\STRmod}
+\const\Deception{\CHAmod}
+\const\History{\INTmod}
+\const\Insight{\INTmod}
+\const\Intimidation{\CHAmod}
+\const\Investigation{\INTmod}
+\const\Medicine{\WISmod}
+\const\Nature{\INTmod}
+\const\Perception{\WISmod}
+\const\Performance{\CHAmod}
+\const\Persuasion{\CHAmod}
+\const\Religion{\WISmod}
+\const\SleightOfHand{\DEXmod}
+\const\Stealth{\DEXmod}
+\const\Survival{\WISmod}
+
+\foreach \skill in \SkillProficiency{%
+   \expandafter\const\csname\skill\endcsname{\csname\skill\endcsname +\ProfBonus}}
+\foreach \skill in \Expertise{%
+   \expandafter\const\csname\skill\endcsname{\csname\skill\endcsname +\ProfBonus}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+% ---- Add additional mods (feat specific bonus, ...)
+%      things like this work too:  \const{Perception}{Perception+2*\ProfBonus+5}
+\const\Acrobatics{\Acrobatics+\ProfBonus}
+\const\SleightOfHand{\SleightOfHand+\ProfBonus}
+\const\PassivePerception{\Perception+10}
+
+
+% ---- Dammage mitigation
+%\newcommand{\DamageMitigation}{
+%\NameAndDesc{Resistance}{bludgeoning, piercing, and slashing from nonmagical attacks}
+%\NameAndDesc{Immunities}{Fire}
+%}
+\newcommand{\DamageMitigation}{}
+
+% ---- Traits
+\newcommand{\Traits}{
+\NameAndDesc{Wanderer}{ You have an excellent memory for maps and geography, and you can always recall the general layout of terrain, settlements, and other features around you. In addition, you can find food and fresh water for yourself and up to five other people each day, provided that the land offers berries, small game, water, and so forth}
+\NameAndDesc{Observant}{If you can see a creature's mouth while it is speaking a language you understand, you can interpret their words by reading their lips}
+\NameAndDesc{Sneak Attack}{Once per turn, you can deal an extra 2d6 damage to one creature you hit with an attack if you have advantage on the attack roll. The attack must use a finesse or a ranged weapon.
+You don't need advantage on the attack roll if another enemy of the target is within 5 feet of it, that enemy isn't incapacitated, and you don't have disadvantage on the attack roll}
+}
+
+% ---- Actions
+\newcommand{\Actions}{
+\tcbitem \textbf{Melee weapon attack}: $\snum{\fpeval{\STRmod + \ProfBonus }}$ to hit, reach 5 ft. Hit: 1d6 $\snum{\STRmod}$ bludgeoning. 
+\newline \textbf{Ranged weapon attack}: $\snum{\fpeval{\DEXmod + \ProfBonus }}$ to hit, reach 30 ft. Hit: 1d6 $\snum{\DEXmod}$ piercing .
+% SPELL DC EXAMPLE:
+% \newline \textbf{Spell DC}: \fpeval{8+\ProfBonus+\INTmod}.  
+
+\NameAndDesc{Shapeshift}{ \emph{\Numberstringnum{\ProfBonus} use per short or long rest.} You magically assume the shape of one of your chosen transformations. You can stay shapeshifted for \CHAmod h. \newline Known shapes: Pirate Bosun, Hobgoblin, Warhorse}
+}
+
+% ---- Bonus Actions
+\newcommand{\BonusActions}{
+\NameAndDesc{Cunning Action}{You can take the Dash, Disengage, or Hide action}
+\NameAndDesc{Steady Aim}{you give yourself advantage on your next attack roll on the current turn. You can use this bonus action only if you haven't moved during this turn, and after you use the bonus action, your speed is 0 until the end of the current turn}}
+
+% ---- Reactions
+\newcommand{\Reactions}{
+\NameAndDesc{Skirmisher}{You are difficult to pin down during a fight. You can move up to half your speed  when an enemy ends its turn within 5 feet of you. This movement doesn’t provoke opportunity attacks}}
+
+% ---- Legendary Actions
+\newcommand{\LegendaryActions}{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%% DO NOT CHANGE ANYTHING BELOW HERE %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% ---- 
+\newcommand\mycommandgenerator[3]{% {Basename}{Postfix}{Number inputs}
+  \expandafter\newcommand\csname #1#2\endcsname[#3]}
+
+
+\begin{document}
+
+\lhead{\begin{tcolorbox}[colback=Default!100!white, 
+			      nobeforeafter,
+			      colframe=Default!100, 
+			      sharp corners, 
+			      rounded corners=north,
+			      arc=3mm,
+			      bottom=0mm,
+			      top=0.4mm,
+			      left=1mm,
+			      right=1mm,
+			      left skip=-2mm,
+			      right skip=-2mm, 
+			      height=15mm,
+			      fontupper=\sffamily\color{white}]
+			      \Huge{\textbf{\CharName}}\hfill\textcolor{white}{\normalsize\textit{\textbf{\Class\ \LVL}\newline}}\normalsize\textit{\textbf{\Description}}\hfill \textcolor{white}{\textit{\textbf{Hit Dice: \HitDice}\newline}} 
+			      \end{tcolorbox}}
+
+
+
+\begin{multicols*}{2}
+
+\begin{tcbitemize}[enhanced,
+				   raster columns=6,
+				   nobeforeafter,
+				   sharp corners	,
+				   height= 10.5mm, 
+				   left=0.1mm,
+			       top=0.1mm,
+			       right=0.1mm, 
+			       colback=Default!20,
+			       colframe=Default!20,
+				   fontupper=\sffamily\color{Default}\footnotesize\centering,
+				   bottomrule=0pt,
+				   toprule=0pt,
+				   leftrule=0pt,
+				   rightrule=0pt,
+    			   raster before skip=0mm,
+				   raster after skip=0mm,
+				   raster left skip=0mm,
+				   raster right skip=0mm,
+				   raster column skip=0mm,
+				   raster column 1/.style={rounded corners=northwest},
+				   raster column 6/.style={rounded corners=northeast},
+				   ]
+\MyStatList{STR}
+\MyStatList{DEX}
+\MyStatList{CON}
+\MyStatList{INT}
+\MyStatList{WIS}
+\MyStatList{CHA}
+\end{tcbitemize}
+
+
+\begin{tcbitemize}[enhanced,
+				   raster columns=6,
+				   nobeforeafter,
+				   sharp corners	,
+				   height= 4mm, 
+				   left=0.1mm,
+			       top=0.1mm,
+			       right=0.1mm, 
+			       colback=Default!20,
+			       colframe=Default!20,
+				   fontupper=\sffamily\color{Default}\scriptsize\centering,
+				   bottomrule=0pt,
+				   toprule=0pt,
+				   leftrule=0pt,
+				   rightrule=0pt,
+				   overlay unbroken={%
+            	   \draw[dotted,color = Default] (interior.north west)--(interior.north east);},
+    			   raster before skip=0mm,
+				   raster after skip=0mm,
+				   raster left skip=0mm,
+				   raster right skip=0mm,
+				   raster column skip=0mm,
+				   ]
+\MySTList{STR}
+\MySTList{DEX}
+\MySTList{CON}
+\MySTList{INT}
+\MySTList{WIS}
+\MySTList{CHA}
+\end{tcbitemize}
+
+\begin{tcbitemize}[enhanced,
+				   raster columns=1,
+				   nobeforeafter,
+				   sharp corners	,
+				   height= 2mm, 
+				   left=0.1mm,
+			       top=-0.8mm,
+			       right=0.1mm, 
+			       colback=Default!20,
+			       colframe=Default!20,
+				   fontupper=\sffamily\color{Default}\tiny\centering,
+				   bottomrule=0pt,
+				   toprule=0pt,
+				   leftrule=0pt,
+				   rightrule=0pt,
+    			   raster before skip=0mm,
+				   raster after skip=1.5mm,
+				   raster left skip=0mm,
+				   raster right skip=0mm,
+				   raster column skip=0mm,
+				   rounded corners=south,
+				   ]
+\tcbitem Saving Throws
+\end{tcbitemize}
+
+
+
+
+\begin{tcbitemize}[enhanced,
+				   raster columns=1, 
+    			   bicolor,
+				   colframe=Default!20,
+    			   colback=Default!20,
+    			   colbacklower=white!100,
+    			   boxrule=0pt,
+    			   sidebyside,
+    			   boxrule=0.1mm,
+    			   nobeforeafter,
+    			   sharp corners,
+    			   raster before skip=0mm,
+				   raster after skip=1.5mm,
+				   raster left skip=0mm,
+				   raster right skip=0mm,
+				   raster row skip=0mm,
+				   raster width=\linewidth,
+				   raster row 1/.style={rounded corners=north},
+				   raster row 8/.style={rounded corners=south},
+				   top=0.2mm,
+				   bottom=0.2mm,
+				   height from= 4mm to 4mm,
+				   fontlower=\color{Default}\scriptsize\raggedright\color{black},
+				   fontupper=\color{Default}\scriptsize\hfill,
+				   sidebyside align=bottom,
+				   lefthand width=20mm,
+				   left=0.1mm,
+				   sidebyside gap=5mm,
+    			   ]
+\tcbitem \textbf{Armor Class} \tcblower \ArmorClass
+\tcbitem \textbf{Hit Points} \tcblower \HitPoint
+\tcbitem \textbf{Speed} \tcblower \Speed
+\tcbitem \textbf{Proficiency} \tcblower $\snum{\ProfBonus}$
+\tcbitem \textbf{Initiative} \tcblower $\snum{\fpeval{\DEXmod}}$
+\tcbitem \textbf{Senses} \tcblower Passive perception \PassivePerception
+\tcbitem \textbf{Weapon Prof.} \tcblower \WeaponProf
+\tcbitem \textbf{Armor Prof.} \tcblower \ArmorProf
+\end{tcbitemize}
+
+
+\begin{tcbitemize}[enhanced,
+				   raster columns=2, 
+    			   bicolor,
+				   colframe=Default!20,
+    			   colback=Default!20,
+    			   colbacklower=white!100,
+    			   boxrule=0pt,
+    			   sidebyside,
+    			   boxrule=0.1mm,
+    			   nobeforeafter,
+    			   sharp corners,
+    			   raster before skip=0mm,
+				   raster after skip=0mm,
+				   raster left skip=0mm,
+				   raster right skip=0mm,
+				   raster row skip=0mm,
+				   raster width=\linewidth,
+				   raster row 1/.style={rounded corners=north},
+				   raster row 9/.style={rounded corners=south},
+				   top=0.0mm,
+				   bottom=0.1mm,
+				   height from= 4mm to 4mm,
+				   fontlower=\color{black}\scriptsize,
+				   fontupper=\color{Default}\scriptsize\hfill,
+				   sidebyside align=center,
+				   lefthand width=20mm,
+				   left=0.1mm,
+				   sidebyside gap=5mm,
+				   ]
+\MySkillList{Acrobatics}
+\MySkillList{AnimalHandling}
+\MySkillList{Arcana}
+\MySkillList{Athletics}
+\MySkillList{Deception}
+\MySkillList{History}
+\MySkillList{Insight}
+\MySkillList{Intimidation}
+\MySkillList{Investigation}
+\MySkillList{Medicine}
+\MySkillList{Nature}
+\MySkillList{Perception}
+\MySkillList{Performance}
+\MySkillList{Persuasion}
+\MySkillList{Religion}
+\MySkillList{SleightOfHand}
+\MySkillList{Stealth}
+\MySkillList{Survival}
+\end{tcbitemize}
+\columnbreak
+
+
+
+ % ---- Damage mitigation box 
+\ifdefempty{\DamageMitigation}{}{
+\begin{tcolorbox}[Subtitle]  \textbf{\footnotesize{Damage Mitigation}} \end{tcolorbox}%
+\begin{tcbitemize}[Text]  \DamageMitigation   \end{tcbitemize}
+}
+
+ % ---- Traits box 
+\ifdefempty{\Traits}{}{
+\begin{tcolorbox}[Subtitle]  \textbf{\footnotesize{Traits}} \end{tcolorbox}%
+\begin{tcbitemize}[Text]  \Traits   \end{tcbitemize}
+}
+
+ % ---- Actions box 
+\ifdefempty{\Actions}{}{
+\begin{tcolorbox}[Subtitle]  \textbf{\footnotesize{Actions}} \end{tcolorbox}%
+\begin{tcbitemize}[Text]  \Actions   \end{tcbitemize}
+}
+
+ % ---- Bonus Actions box 
+\ifdefempty{\BonusActions}{}{
+\begin{tcolorbox}[Subtitle]  \textbf{\footnotesize{Bonus Actions}} \end{tcolorbox}%
+\begin{tcbitemize}[Text]  \BonusActions   \end{tcbitemize}
+}
+
+ % ---- Reactions box 
+\ifdefempty{\Reactions}{}{
+\begin{tcolorbox}[Subtitle]  \textbf{\footnotesize{Reactions}} \end{tcolorbox}%
+\begin{tcbitemize}[Text]  \Reactions   \end{tcbitemize}
+}
+
+ % ---- Legendary Actions box 
+\ifdefempty{\LegendaryActions}{}{
+\begin{tcolorbox}[Subtitle]  \textbf{\footnotesize{Legendary Actions}} \end{tcolorbox}%
+\begin{tcbitemize}[Text]  \LegendaryActions   \end{tcbitemize}
+}
+
+
+
+
+\end{multicols*}
+\end{document}

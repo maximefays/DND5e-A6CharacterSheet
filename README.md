@@ -21,8 +21,9 @@ You can also change the color scheme at line 100.
 
 ## Sample cards 
 
-![Black](Sample/Black.png)
-![Brown](Sample/Brown.png)
+<img src="Sample/Black.png" width="500">
+
+<img src="Sample/Brown.png" width="500">
 
 ## Credits
 
